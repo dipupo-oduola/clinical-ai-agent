@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical AI Agent | Dipupo Oduola</title>
+<style>
+body {
+margin: 0;
+background: #eef3f8;
+color: #142b42;
+font: 17px system-ui, sans-serif;
+}
+main {
+max-width: 800px;
+margin: 50px auto;
+padding: 24px;
+}
+header {
+color: #126e73;
+font-size: 13px;
+font-weight: bold;
+letter-spacing: 2px;
+}
+h1 { font-size: 40px; }
+p { line-height: 1.6; }
+section {
+background: white;
+border: 1px solid #d6e1ea;
+border-radius: 16px;
+padding: 24px;
+margin-top: 24px;
+}
+label {
+display: block;
+font-weight: bold;
+margin-bottom: 12px;
+}
+textarea {
+box-sizing: border-box;
+width: 100%;
+padding: 14px;
+font: inherit;
+border: 1px solid #abbccd;
+border-radius: 8px;
+}
+button {
+background: #126e73;
+color: white;
+border: 0;
+border-radius: 8px;
+padding: 12px 18px;
+font: inherit;
+cursor: pointer;
+margin-top: 12px;
+}
+button:disabled { opacity: 0.5; }
+small {
+display: block;
+color: #52687b;
+line-height: 1.6;
+}
+article {
+border-left: 3px solid #16868a;
+padding: 4px 16px;
+margin: 22px 0;
+}
+footer {
+margin-top: 24px;
+color: #52687b;
+font-size: 13px;
+}
+</style>
+</head>
+<body>
+<main>
+<header>DIPUPO ODUOLA / PORTFOLIO DEMO</header>
+<h1>Clinical AI Agent</h1>
+<p>
+Search sample study documents and inspect
+supporting source passages.
+</p>
+<small>
+Offline keyword retrieval · Synthetic documents
+· No generative model connected
+</small>
+
+<section>
+<form id="form">
+<label for="question">Ask about the sample study</label>
+<textarea
+id="question"
+rows="3"
+maxlength="1000"
+required
+placeholder="What is the screening window?"
+></textarea>
+<button id="submit" type="submit">
+Find evidence
+</button>
+</form>
+<small>
+Try: What is the consent process?
+Or: How are deviations recorded?
+</small>
+</section>
+
+<section id="result" aria-live="polite">
+<small>
+Source passages will appear here with
+a filename and paragraph reference.
+</small>
+</section>
+
+<footer>
+Demonstration only. All study details are fictional
+and are not clinical guidance. Use synthetic data only.
+</footer>
+</main>
+
+<script>
+const form = document.querySelector("#form");
+const result = document.querySelector("#result");
+const button = document.querySelector("#submit");
+
+form.addEventListener("submit", async (event) => {
+event.preventDefault();
+button.disabled = true;
+result.textContent = "Searching sample documents…";
+
+try {
+const response = await fetch("/api/ask", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+question: document.querySelector("#question").value
+})
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+throw new Error(data.error || "Request failed.");
+}
+
+result.replaceChildren();
+
+const heading = document.createElement("h2");
+heading.textContent = data.passages.length
+? "Relevant source passages"
+: "No supporting evidence found";
+result.append(heading);
+
+for (const passage of data.passages) {
+const article = document.createElement("article");
+const citation = document.createElement("small");
+const text = document.createElement("p");
+
+citation.textContent =
+passage.source + " · paragraph " + passage.paragraph;
+text.textContent = passage.text;
+
+article.append(citation, text);
+result.append(article);
+}
+} catch (error) {
+result.textContent =
+"Unable to search. Make sure the Python server " +
+"is running. " + error.message;
+} finally {
+button.disabled = false;
+}
+});
+</script>
+</body>
+</html>
